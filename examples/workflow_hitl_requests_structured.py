@@ -108,7 +108,9 @@ class TripCoordinator(Executor):
     @handler
     async def on_agent_response(self, result: AgentExecutorResponse, ctx: WorkflowContext) -> None:
         """Handle the agent's structured response."""
-        output: PlannerOutput = result.agent_response.value
+        # Parse structured output from text (AgentResponse.value may be None
+        # in streaming workflows due to response_format not propagating).
+        output = PlannerOutput.model_validate_json(result.agent_response.text)
 
         if output.status == "need_info" and output.question:
             # Pause and ask the human
@@ -154,7 +156,7 @@ async def main() -> None:
             '  {"status": "complete", "itinerary": "your full itinerary here"}\n'
             "No explanations or additional text outside the JSON."
         ),
-        chat_client=client,
+        client=client,
         default_options={"response_format": PlannerOutput},
     )
 

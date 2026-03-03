@@ -117,7 +117,7 @@ async def main() -> None:
     chat_agent = Agent(
         name="ChatAgent",
         instructions="Eres un asistente amigable y servicial. Mantén las respuestas concisas (2-3 oraciones).",
-        chat_client=client,
+        client=client,
     )
 
     coordinator = ChatCoordinator(agent_id="ChatAgent")

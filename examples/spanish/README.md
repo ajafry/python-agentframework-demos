@@ -224,7 +224,6 @@ Puedes ejecutar los ejemplos en este repositorio ejecutando los scripts en el di
 | [workflow_hitl_checkpoint.py](workflow_hitl_checkpoint.py) | Revisión de contenido con `FileCheckpointStorage` — pausar, salir del proceso y reanudar desde checkpoint. |
 | [workflow_hitl_checkpoint_pg.py](workflow_hitl_checkpoint_pg.py) | Mismo workflow de revisión con un backend personalizado `PostgresCheckpointStorage`. |
 | [workflow_hitl_handoff.py](workflow_hitl_handoff.py) | Handoff interactivo (sin modo autónomo) — el framework pausa para entrada del usuario vía `HandoffAgentUserRequest`. |
-| [workflow_hitl_magentic.py](workflow_hitl_magentic.py) | Orquestación Magentic con revisión de plan — el humano puede aprobar o revisar el plan antes de la ejecución. |
 | [agent_otel_aspire.py](agent_otel_aspire.py) | Un agente con trazas, métricas y logs estructurados de OpenTelemetry exportados al [Aspire Dashboard](https://aspire.dev/dashboard/standalone/). |
 | [agent_otel_appinsights.py](agent_otel_appinsights.py) | Un agente con trazas, métricas y logs estructurados de OpenTelemetry exportados a [Azure Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview). Requiere aprovisionamiento de Azure con `azd provision`. |
 | [agent_evaluation_generate.py](agent_evaluation_generate.py) | Genera datos sintéticos de evaluación para el agente planificador de viajes. |
