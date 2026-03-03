@@ -229,7 +229,6 @@ You can run the examples in this repository by executing the scripts in the `exa
 | [workflow_hitl_checkpoint.py](examples/workflow_hitl_checkpoint.py) | Content review with `FileCheckpointStorage` — pause, exit process, and resume from checkpoint. |
 | [workflow_hitl_checkpoint_pg.py](examples/workflow_hitl_checkpoint_pg.py) | Same content review workflow with a custom `PostgresCheckpointStorage` backend. |
 | [workflow_hitl_handoff.py](examples/workflow_hitl_handoff.py) | Interactive handoff (no autonomous mode) — framework pauses for user input via `HandoffAgentUserRequest`. |
-| [workflow_hitl_handoff_approval.py](examples/workflow_hitl_handoff_approval.py) | Handoff with user input + tool approval combined in the same event loop. |
 | [workflow_hitl_magentic.py](examples/workflow_hitl_magentic.py) | Magentic orchestration with plan review — human can approve or revise the plan before execution. |
 | [agent_otel_aspire.py](examples/agent_otel_aspire.py) | An agent with OpenTelemetry tracing, metrics, and structured logs exported to the [Aspire Dashboard](https://aspire.dev/dashboard/standalone/). |
 | [agent_otel_appinsights.py](examples/agent_otel_appinsights.py) | An agent with OpenTelemetry tracing, metrics, and structured logs exported to [Azure Application Insights](https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview). Requires Azure provisioning via `azd provision`. |

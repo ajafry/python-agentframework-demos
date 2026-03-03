@@ -14,9 +14,9 @@ Run:
 import asyncio
 import os
 import sys
-from typing import Any
+from typing import Annotated, Any
 
-from agent_framework import Agent, AgentResponse, AgentResponseUpdate
+from agent_framework import Agent, AgentResponse, AgentResponseUpdate, tool
 from agent_framework.openai import OpenAIChatClient
 from agent_framework.orchestrations import HandoffAgentUserRequest, HandoffBuilder
 from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
@@ -47,6 +47,18 @@ else:
     )
 
 
+# --- Tools ---
+
+
+@tool
+def process_return(
+    order_number: Annotated[str, "The 3-digit order number"],
+    return_type: Annotated[str, "Either 'refund' or 'replacement'"],
+) -> str:
+    """Process a product return for the given order."""
+    return f"Return processed for order {order_number}: {return_type} approved. Confirmation email sent."
+
+
 # --- Agents ---
 
 triage_agent = Agent(
@@ -56,6 +68,8 @@ triage_agent = Agent(
         "You are a customer-support triage agent. Greet the customer, understand their issue, "
         "and hand off to the right specialist: order_agent for order inquiries, "
         "return_agent for returns. You cannot handle specific issues yourself — always hand off. "
+        "If a specialist has just finished helping, ask the customer if there is anything else "
+        "they need help with — do NOT re-route to the same specialist. "
         "Do NOT ask for contact information, email, or phone number. "
         "Do NOT say 'Goodbye' until the customer explicitly confirms they have no more questions."
     ),
@@ -65,7 +79,7 @@ order_agent = Agent(
     client=client,
     name="order_agent",
     instructions=(
-        "You handle order status inquiries. Help the customer with their order. "
+        "You are the order tracking specialist. Help the customer check order status. "
         "When done, hand off back to triage_agent."
     ),
 )
@@ -74,18 +88,16 @@ return_agent = Agent(
     client=client,
     name="return_agent",
     instructions=(
-        "You handle product returns. Help the customer initiate a return. "
+        "You are the returns specialist. Help the customer initiate a return. "
         "The only details you need are the order number (3 digits) and whether they want a refund or replacement. "
-        "Keep it simple and fast. When done, hand off back to triage_agent."
+        "Keep it simple and fast. Once the customer confirms, call process_return to complete the return. "
+        "After the return is processed, hand off back to triage_agent."
     ),
+    tools=[process_return],
 )
 
 
-# --- Main ---
-
-
 # --- Workflow ---
-
 workflow = (
     HandoffBuilder(
         name="customer_support",
@@ -131,11 +143,9 @@ async def main() -> None:
             if isinstance(request_event.data, HandoffAgentUserRequest):
                 # Show agent's response
                 agent_response = request_event.data.agent_response
-                if agent_response.messages:
-                    for msg in agent_response.messages[-3:]:
-                        if msg.text:
-                            speaker = msg.author_name or msg.role
-                            print(f"🤖 {speaker}: {msg.text}")
+                for msg in agent_response.messages:
+                    if msg.text:
+                        print(f"🤖 {msg.author_name}: {msg.text}")
 
                 # Get user input
                 user_input = input("\n👤 You: ").strip()

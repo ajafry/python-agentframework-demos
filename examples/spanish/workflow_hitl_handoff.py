@@ -14,9 +14,9 @@ Ejecutar:
 import asyncio
 import os
 import sys
-from typing import Any
+from typing import Annotated, Any
 
-from agent_framework import Agent, AgentResponse, AgentResponseUpdate
+from agent_framework import Agent, AgentResponse, AgentResponseUpdate, tool
 from agent_framework.openai import OpenAIChatClient
 from agent_framework.orchestrations import HandoffAgentUserRequest, HandoffBuilder
 from azure.identity.aio import DefaultAzureCredential, get_bearer_token_provider
@@ -47,6 +47,18 @@ else:
     )
 
 
+# --- Herramientas ---
+
+
+@tool
+def process_return(
+    order_number: Annotated[str, "The 3-digit order number"],
+    return_type: Annotated[str, "Either 'refund' or 'replacement'"],
+) -> str:
+    """Process a product return for the given order."""
+    return f"Return processed for order {order_number}: {return_type} approved. Confirmation email sent."
+
+
 # --- Agentes ---
 
 triage_agent = Agent(
@@ -56,6 +68,8 @@ triage_agent = Agent(
         "Eres un agente de triaje de soporte al cliente. Saluda al cliente, entiende su problema "
         "y transfiere al especialista correcto: order_agent para consultas de pedidos, "
         "return_agent para devoluciones. No puedes manejar problemas específicos tú mismo — siempre transfiere. "
+        "Si un especialista acaba de terminar de ayudar, pregunta al cliente si necesita algo más "
+        "— NO reenvíes al mismo especialista. "
         "NO pidas información de contacto, correo electrónico ni número de teléfono. "
         "NO digas 'Adiós' hasta que el cliente confirme explícitamente que no tiene más preguntas."
     ),
@@ -65,7 +79,7 @@ order_agent = Agent(
     client=client,
     name="order_agent",
     instructions=(
-        "Te encargas de consultas sobre el estado de pedidos. Ayuda al cliente con su pedido. "
+        "Eres el especialista en seguimiento de pedidos. Ayuda al cliente a verificar el estado de su pedido. "
         "Cuando termines, transfiere de vuelta a triage_agent."
     ),
 )
@@ -74,10 +88,12 @@ return_agent = Agent(
     client=client,
     name="return_agent",
     instructions=(
-        "Te encargas de devoluciones de productos. Ayuda al cliente a iniciar una devolución. "
+        "Eres el especialista en devoluciones. Ayuda al cliente a iniciar una devolución. "
         "Los únicos datos que necesitas son el número de pedido (3 dígitos) y si quieren un reembolso o reemplazo. "
-        "Mantenlo simple y rápido. Cuando termines, transfiere de vuelta a triage_agent."
+        "Mantenlo simple y rápido. Una vez que el cliente confirme, llama a process_return para completar la devolución. "
+        "Después de procesar la devolución, transfiere de vuelta a triage_agent."
     ),
+    tools=[process_return],
 )
 
 
@@ -131,11 +147,9 @@ async def main() -> None:
             if isinstance(request_event.data, HandoffAgentUserRequest):
                 # Muestra la respuesta del agente
                 agent_response = request_event.data.agent_response
-                if agent_response.messages:
-                    for msg in agent_response.messages[-3:]:
-                        if msg.text:
-                            speaker = msg.author_name or msg.role
-                            print(f"🤖 {speaker}: {msg.text}")
+                for msg in agent_response.messages:
+                    if msg.text:
+                        print(f"🤖 {msg.author_name}: {msg.text}")
 
                 # Obtiene la entrada del usuario
                 user_input = input("\n👤 Tú: ").strip()

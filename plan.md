@@ -891,14 +891,15 @@ workflow = (HandoffBuilder(
 for request_event in request_events:
   if isinstance(request_event.data, HandoffAgentUserRequest):
     # Show agent's response
-    for msg in request_event.data.agent_response.messages[-3:]:
-      print(f"{msg.author_name}: {msg.text}")
+    for msg in request_event.data.agent_response.messages:
+      if msg.text:
+        print(f"{msg.author_name}: {msg.text}")
 
     user_input = input("You: ")
     if user_input == "exit":
-      responses[id] = HandoffAgentUserRequest.terminate()
+      responses[request_event.request_id] = HandoffAgentUserRequest.terminate()
     else:
-      responses[id] = HandoffAgentUserRequest.create_response(user_input)
+      responses[request_event.request_id] = HandoffAgentUserRequest.create_response(user_input)
 
 Full example: workflow_hitl_handoff.py
 
@@ -910,40 +911,8 @@ Speaker notes:
   This is the default behavior — autonomous mode is the opt-in."
 ```
 
-### Slide 28: Handoff — Adding tool approval
-```
-agent-framework
-
-Handoff: Adding tool approval
-Combine user input with tool approval in the same event loop.
-
-@tool(approval_mode="always_require")
-def process_refund(order_number: str) -> str:
-  """Process a refund for a given order."""
-  return f"Refund processed for order {order_number}."
-
-# Same HandoffBuilder, but agents have approval-required tools
-# The event loop handles BOTH types of requests:
-for request_event in request_events:
-  if isinstance(request_event.data, HandoffAgentUserRequest):
-    # Agent needs user input (same as before)
-    responses[id] = HandoffAgentUserRequest.create_response(user_input)
-
-  elif isinstance(request_event.data, Content):
-    # Agent wants to call a tool requiring approval
-    print(f"Tool: {request_event.data.function_call.name}")
-    approved = input("Approve? (y/n): ") == "y"
-    responses[id] = request_event.data.to_function_approval_response(approved)
-
-Full example: workflow_hitl_handoff_approval.py
-
-Speaker notes:
-  "You can combine user input and tool approval in the same handoff workflow.
-  The event loop just checks the type of each request: HandoffAgentUserRequest
-  for conversational input, or Content with a function_approval_request for
-  tool gating. This is the same @tool(approval_mode='always_require') decorator
-  we saw earlier — it works the same way inside a handoff workflow."
-```
+<!-- Slide 28 (Handoff + tool approval) removed: blocked by framework bug
+     https://github.com/microsoft/agent-framework/issues/4411 -->
 
 ### Slide 29: Next steps / resources
 ```
